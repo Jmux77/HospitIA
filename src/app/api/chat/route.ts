@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     if (hotelError || !hotel) return NextResponse.json({ error: "Établissement introuvable" }, { status: 404 });
 
     const { data: facts, error: factsError } = await supabase
-      .from("hotel_facts").select("category,question,answer").eq("hotel_id", hotelId).limit(100);
+      .from("hotel_facts").select("category,question,answer").eq("hotel_id", hotelId).eq("is_public", true).limit(100);
     if (factsError) throw factsError;
     if (!facts?.length) {
       return NextResponse.json({ answer: "Je ne dispose pas encore des informations nécessaires. La réception pourra vous renseigner." });
