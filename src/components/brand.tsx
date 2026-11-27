@@ -1,0 +1,1 @@
+export function Brand(){return <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-teal text-lg font-bold text-white">H</div><div><div className="text-lg font-bold">HospitIA</div><div className="text-xs text-slate-500">AI Hospitality Platform</div></div></div>;}

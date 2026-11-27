@@ -1,0 +1,9 @@
+"use client";
+import {useState} from "react";
+import {createClient} from "@/lib/supabase/client";
+import {Brand} from "@/components/brand";
+export default function Login(){
+ const [email,setEmail]=useState("");const [password,setPassword]=useState("");const [message,setMessage]=useState("");const [busy,setBusy]=useState(false);
+ async function submit(e:React.FormEvent){e.preventDefault();setBusy(true);setMessage("");const {error}=await createClient().auth.signInWithPassword({email,password});setBusy(false);if(error){setMessage("Connexion impossible : vérifiez vos identifiants.");return;}window.location.href="/dashboard";}
+ return <main className="grid min-h-screen place-items-center px-5"><form onSubmit={submit} className="w-full max-w-md rounded-3xl border bg-white p-8 shadow-sm"><Brand/><h1 className="mt-8 text-2xl font-bold">Connexion hôtel</h1><label className="mt-6 block text-sm font-semibold">Adresse e-mail</label><input required type="email" value={email} onChange={e=>setEmail(e.target.value)} className="mt-2 w-full rounded-xl border p-3"/><label className="mt-4 block text-sm font-semibold">Mot de passe</label><input required type="password" value={password} onChange={e=>setPassword(e.target.value)} className="mt-2 w-full rounded-xl border p-3"/><button disabled={busy} className="mt-6 w-full rounded-xl bg-ink p-3 font-semibold text-white">{busy?"Connexion…":"Se connecter"}</button>{message&&<p role="alert" className="mt-4 text-sm text-red-600">{message}</p>}<p className="mt-5 text-xs text-slate-500">Les comptes sont créés par l'administrateur HospitIA.</p></form></main>;
+}
