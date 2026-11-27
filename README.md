@@ -1,200 +1,76 @@
 # HospitIA
-AI platform for independent hotels
-🏨 HospitIA
 
-L’assistant IA conçu pour les hôtels indépendants.
-
-HospitIA est une plateforme SaaS qui aide les hôtels à automatiser leur réception, améliorer l’expérience client et augmenter leurs revenus grâce à l’intelligence artificielle.
-
-⸻
-
-🚀 Notre mission
-
-Permettre aux hôtels indépendants de bénéficier d’un assistant IA professionnel capable de :
-
-* Répondre automatiquement aux questions des clients
-* Assister les réceptionnistes
-* Gérer les demandes 24h/24
-* Réduire les tâches répétitives
-* Générer davantage de réservations directes
-* Augmenter le chiffre d’affaires grâce à l’upselling
-
-⸻
-
-🌍 Marchés cibles
-
-* 🇫🇷 France
-* 🇲🇦 Maroc
-
-À terme :
-
-* Europe francophone
-* Europe
-* Moyen-Orient
-
-⸻
-
-⭐ Fonctionnalités
-
-🤖 Réceptionniste IA
-
-* Chat en direct
-* Réponses multilingues
-* Questions fréquentes
-* Assistance e-mail
-* Historique des conversations
-
-⸻
-
-📚 Centre de connaissances
-
-* Import PDF
-* FAQ
-* Documents internes
-* Services
-* Horaires
-* Politiques de l’hôtel
-
-⸻
-
-💬 Concierge IA
-
-Le client peut demander :
-
-* Restaurants
-* Activités
-* Taxi
-* Parking
-* Musées
-* Bars
-* Excursions
-
-Le concierge répond selon les informations validées par l’hôtel et les recommandations configurées.
-
-⸻
-
-💰 Upselling IA
-
-Avant l’arrivée :
-
-* Petit-déjeuner
-* Parking
-* Chambre supérieure
-* Late Check-out
-* Spa
-* Champagne
-* Pack romantique
-
-Objectif :
-
-Augmenter le revenu par séjour.
-
-⸻
-
-📊 Dashboard
-
-Le directeur retrouve :
-
-* Conversations
-* Temps économisé
-* Satisfaction client
-* Questions fréquentes
-* Statistiques
-
-⸻
-
-👥 Gestion du personnel
-
-* Comptes employés
-* Rôles
-* Permissions
-
-⸻
-
-🏨 Gestion multi-hôtels
-
-Un compte peut administrer plusieurs établissements.
-
-⸻
-
-🛠️ Technologies prévues
-
-Frontend
-
-* Next.js
-* React
-* Tailwind CSS
-
-Backend
-
-* Supabase
-
-IA
-
-* OpenAI API
-
-Automatisations
-
-* n8n
-
-Paiement
-
-* Stripe
-
-Hébergement
-
-* Vercel
-
-⸻
-
-🎯 Vision
-
-HospitIA ne sera pas un simple chatbot.
-
-Notre ambition est de devenir le système d’exploitation des hôtels indépendants, regroupant :
-
-* Réception IA
-* Concierge IA
-* CRM
-* Marketing IA
-* Gestion documentaire
-* Tableau de bord
-* Automatisations
-
-⸻
-
-📅 Roadmap
-
-Version 1
-
-* Authentification
-* Dashboard
-* Réceptionniste IA
-* Base documentaire
-* Concierge IA
-* Upselling IA
-
-Version 2
-
-* WhatsApp
-* Réponses aux avis
-* E-mails
-* CRM
-
-Version 3
-
-* Standard téléphonique IA
-* Housekeeping
-* Maintenance
-* Analytics avancés
-* API publique
-
-⸻
-
-👤 Fondateur
-
-Jean-Marc Munaretto
-
-⸻
-
-HospitIA est un projet en développement avec pour objectif de devenir la plateforme IA de référence pour les hôtels indépendants.
+Concierge IA multilingue et plateforme SaaS destinée aux hôtels indépendants en **France et en Suisse**.
+
+## Fonctionnalités présentes dans cette fondation V1
+- Site vitrine responsive.
+- Authentification hôtelière par Supabase.
+- Tableau de bord par établissement.
+- Base de connaissances saisie et validée par l'hôtel.
+- Chat concierge public par URL/QR code.
+- Réponses générées par OpenAI à partir des seules informations publiées par l'hôtel.
+- Schéma PostgreSQL multi-établissements avec politiques RLS.
+
+## Stack technique
+- Next.js 16 + React 19 + TypeScript.
+- Supabase Auth, PostgreSQL, RLS.
+- OpenAI Node SDK (clé exclusivement côté serveur).
+- Tailwind CSS.
+
+## Démarrage local
+Prérequis : Node.js 24 ou supérieur.
+```bash
+npm install
+cp .env.example .env.local
+npm run dev
+```
+Ouvrir http://localhost:3000.
+
+## Variables d'environnement
+```dotenv
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4o-mini
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+Ne jamais committer `.env.local`, une clé OpenAI, une clé Supabase secrète/service-role ou un mot de passe de base de données.
+
+## Configuration Supabase
+1. Créer un projet dans une région adaptée à la résidence des données des hôtels.
+2. Exécuter `supabase/schema.sql` dans SQL Editor.
+3. Créer un utilisateur pilote dans Authentication.
+4. Créer l'hôtel et son propriétaire avec leurs vrais UUID :
+```sql
+insert into public.hotels(name,slug,city,country,language,plan)
+values ('Hôtel Démo HospitIA','hotel-demo','Annecy','FR','fr','business')
+returning id;
+-- Utiliser l'UUID retourné et l'UUID Auth réel :
+insert into public.hotel_members(hotel_id,user_id,role)
+values ('HOTEL_UUID','AUTH_USER_UUID','owner');
+```
+5. Ajouter des informations réelles uniquement après vérification par l'hôtel.
+
+## Routes
+- `/` : site vitrine.
+- `/demo` : aperçu statique du concierge.
+- `/login` : connexion hôtelier.
+- `/dashboard` : espace établissement.
+- `/dashboard/facts` : base de connaissances.
+- `/guest/<HOTEL_UUID>` : concierge client.
+- `POST /api/chat` : API conversationnelle.
+
+## Limites connues de cette fondation
+Cette V1 est un prototype technique, pas un SaaS autorisé à traiter de vrais clients en production.
+- Pas de limiteur anti-abus / rate limiting robuste sur le chat public.
+- Les conversations ne sont pas encore enregistrées.
+- Pas encore de traitement des demandes client ni de notifications réception.
+- Pas de paiement ou gestion d'abonnements Stripe.
+- Pas de tests automatisés d'isolation entre hôtels.
+- Les informations de la table `hotel_facts` des hôtels actifs sont lisibles par les visiteurs du concierge : ne jamais y mettre de données internes ou personnelles.
+- Pas encore de gestion de la conservation, du droit à l'effacement ou du consentement.
+
+Lire `docs/SECURITY-CHECKLIST.md` et `docs/DEPLOYMENT.md` avant tout pilote. Vérifier les obligations RGPD en France et LPD/révFADP en Suisse, les contrats de sous-traitance et le lieu de traitement des données.
+
+## Roadmap
+Voir `ROADMAP.md` et `docs/PRODUCT-ROADMAP.md`.
