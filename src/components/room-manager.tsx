@@ -26,29 +26,53 @@ export function RoomManager({ initialRooms, hotelId, canManage }: { initialRooms
 
   async function addRoom(event: React.FormEvent) {
     event.preventDefault();
-    if (!number.trim()) return;
+    if (!canManage || busy || !number.trim()) return;
     setBusy(true); setNotice("");
-    const { data, error } = await createClient().from("hotel_rooms")
-      .insert({ hotel_id: hotelId, room_number: number.trim(), room_type: type, floor: floor.trim() || null })
-      .select("id,room_number,room_type,floor,status").single();
-    setBusy(false);
-    if (error || !data) { setNotice(error?.code === "23505" ? "Ce numéro de chambre existe déjà." : "Impossible d'ajouter la chambre. Vérifiez vos droits."); return; }
-    setRooms(old => [...old, data].sort((a,b) => a.room_number.localeCompare(b.room_number, "fr", {numeric:true})));
-    setNumber(""); setFloor(""); setShowForm(false); setNotice("Chambre ajoutée.");
+    try {
+      const { data, error } = await createClient().from("hotel_rooms")
+        .insert({ hotel_id: hotelId, room_number: number.trim(), room_type: type.trim(), floor: floor.trim() || null })
+        .select("id,room_number,room_type,floor,status").single();
+      if (error || !data) {
+        setNotice(error?.code === "23505" ? "Ce numéro de chambre existe déjà." : "Impossible d'ajouter la chambre. Vérifiez vos droits et réessayez.");
+        return;
+      }
+      setRooms(old => [...old, data].sort((a,b) => a.room_number.localeCompare(b.room_number, "fr", {numeric:true})));
+      setNumber(""); setFloor(""); setShowForm(false); setNotice("Chambre ajoutée.");
+    } catch {
+      setNotice("Problème de connexion : la chambre n'a pas été confirmée. Réessayez.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function updateStatus(room: Room, status: string) {
-    setNotice("");
-    const { error } = await createClient().from("hotel_rooms").update({ status }).eq("id", room.id);
-    if (error) { setNotice("Modification refusée. Vérifiez les droits de votre compte."); return; }
-    setRooms(old => old.map(item => item.id === room.id ? { ...item, status } : item));
+    if (busy || !Object.hasOwn(statusLabels, status)) return;
+    setBusy(true); setNotice("");
+    try {
+      const { data, error } = await createClient().from("hotel_rooms")
+        .update({ status }).eq("id", room.id).select("id").single();
+      if (error || !data) throw new Error("update_failed");
+      setRooms(old => old.map(item => item.id === room.id ? { ...item, status } : item));
+    } catch {
+      setNotice("Modification non confirmée. Actualisez la page et réessayez.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function removeRoom(room: Room) {
-    if (!window.confirm(`Supprimer la chambre ${room.room_number} ?`)) return;
-    const { error } = await createClient().from("hotel_rooms").delete().eq("id", room.id);
-    if (error) { setNotice("Suppression impossible. Seule la direction peut supprimer une chambre."); return; }
-    setRooms(old => old.filter(item => item.id !== room.id)); setNotice("Chambre supprimée.");
+    if (!canManage || busy || !window.confirm(`Supprimer la chambre ${room.room_number} ?`)) return;
+    setBusy(true); setNotice("");
+    try {
+      const { data, error } = await createClient().from("hotel_rooms")
+        .delete().eq("id", room.id).select("id").single();
+      if (error || !data) throw new Error("delete_failed");
+      setRooms(old => old.filter(item => item.id !== room.id)); setNotice("Chambre supprimée.");
+    } catch {
+      setNotice("Suppression non confirmée. Actualisez la page et réessayez.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return <div className="space-y-5">
@@ -58,16 +82,16 @@ export function RoomManager({ initialRooms, hotelId, canManage }: { initialRooms
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div><h2 className="font-bold text-ink">Parc de chambres</h2><p className="mt-1 text-xs text-slate-500">{rooms.length} chambre(s) enregistrée(s)</p></div>
-        {canManage && <button onClick={() => setShowForm(v=>!v)} className="rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white">{showForm ? "Fermer" : "+ Ajouter une chambre"}</button>}
+        {canManage && <button disabled={busy} onClick={() => setShowForm(v=>!v)} className="rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{showForm ? "Fermer" : "+ Ajouter une chambre"}</button>}
       </div>
-      {showForm && <form onSubmit={addRoom} className="mt-5 grid gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-2">
-        <label className="text-xs font-semibold text-slate-600">Numéro<input required value={number} onChange={e=>setNumber(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm" placeholder="101"/></label>
-        <label className="text-xs font-semibold text-slate-600">Type de chambre<input required value={type} onChange={e=>setType(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm"/></label>
-        <label className="text-xs font-semibold text-slate-600">Étage<input value={floor} onChange={e=>setFloor(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm" placeholder="1"/></label>
-        <div className="flex items-end"><button disabled={busy} className="w-full rounded-lg bg-teal px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Enregistrement…" : "Enregistrer"}</button></div>
+      {showForm && canManage && <form onSubmit={addRoom} className="mt-5 grid gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-2">
+        <label className="text-xs font-semibold text-slate-600">Numéro<input required maxLength={30} value={number} onChange={e=>setNumber(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm" placeholder="101"/></label>
+        <label className="text-xs font-semibold text-slate-600">Type de chambre<input required maxLength={80} value={type} onChange={e=>setType(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm"/></label>
+        <label className="text-xs font-semibold text-slate-600">Étage<input maxLength={30} value={floor} onChange={e=>setFloor(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm" placeholder="1"/></label>
+        <div className="flex items-end"><button disabled={busy || !number.trim() || !type.trim()} className="w-full rounded-lg bg-teal px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Enregistrement…" : "Enregistrer"}</button></div>
       </form>}
       <div className="mt-5 flex flex-wrap gap-2">
-        {[["all","Toutes"],...Object.entries(statusLabels).map(([key,label])=>[key,label])].map(([key,label]) => <button key={key} onClick={()=>setFilter(key)} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${filter===key?"bg-ink text-white":"bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{label}</button>)}
+        {[[ "all","Toutes"],...Object.entries(statusLabels).map(([key,label])=>[key,label])].map(([key,label]) => <button key={key} disabled={busy} onClick={()=>setFilter(key)} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${filter===key?"bg-ink text-white":"bg-slate-100 text-slate-600 hover:bg-slate-200"} disabled:opacity-50`}>{label}</button>)}
       </div>
       {notice && <p role="status" className="mt-3 text-xs text-teal">{notice}</p>}
       <div className="mt-4 divide-y divide-slate-100">
@@ -75,10 +99,10 @@ export function RoomManager({ initialRooms, hotelId, canManage }: { initialRooms
           <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#E8F4F1] text-lg text-teal">▦</div>
           <div className="min-w-[130px] flex-1"><p className="text-sm font-bold text-ink">Chambre {room.room_number}</p><p className="mt-0.5 text-xs text-slate-500">{room.room_type}{room.floor ? ` · Étage ${room.floor}` : ""}</p></div>
           <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${statusStyles[room.status] || statusStyles.available}`}>{statusLabels[room.status] || room.status}</span>
-          <select aria-label={`Statut chambre ${room.room_number}`} value={room.status} onChange={e=>updateStatus(room,e.target.value)} className="rounded-lg border border-slate-200 bg-white p-2 text-xs">
+          <select disabled={busy} aria-label={`Statut chambre ${room.room_number}`} value={room.status} onChange={e=>updateStatus(room,e.target.value)} className="rounded-lg border border-slate-200 bg-white p-2 text-xs disabled:opacity-50">
             {Object.entries(statusLabels).map(([key,label])=><option key={key} value={key}>{label}</option>)}
           </select>
-          {canManage && <button onClick={()=>removeRoom(room)} aria-label={`Supprimer chambre ${room.room_number}`} className="rounded-lg p-2 text-xs text-slate-400 hover:bg-red-50 hover:text-red-600">✕</button>}
+          {canManage && <button disabled={busy} onClick={()=>removeRoom(room)} aria-label={`Supprimer chambre ${room.room_number}`} className="rounded-lg p-2 text-xs text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50">✕</button>}
         </div>)}
         {!filtered.length && <div className="py-10 text-center"><p className="font-semibold text-ink">Aucune chambre dans cette catégorie</p><p className="mt-1 text-xs text-slate-500">Ajoutez vos chambres pour commencer le suivi.</p></div>}
       </div>
