@@ -6,7 +6,7 @@ Concierge IA multilingue et espace de gestion pour hôtels indépendants et rés
 
 - Site vitrine responsive et identité visuelle HospitIA.
 - Création de compte hôtelier, confirmation e-mail, connexion et réinitialisation de mot de passe via Supabase Auth.
-- Création du premier établissement avec rattachement propriétaire sécurisé.
+- Création atomique du premier établissement et rattachement propriétaire sécurisé, avec reprise d'un onboarding interrompu.
 - Espace multi-établissements, avec changement de contexte pour les comptes autorisés.
 - Tableau de bord alimenté par les données Supabase.
 - Base de connaissances avec publication et dépublication des réponses utilisées par le concierge.
