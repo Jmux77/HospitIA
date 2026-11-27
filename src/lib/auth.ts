@@ -3,8 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 export async function getUserAndHotel() {
   const supabase = await createClient();
   // Verify JWT claims before using the subject to scope tenant queries.
-  const { data: { claims }, error } = await supabase.auth.getClaims();
-  const userId = !error && typeof claims?.sub === "string" ? claims.sub : null;
+  const { data, error } = await supabase.auth.getClaims();
+  const userId = !error && typeof data?.claims?.sub === "string" ? data.claims.sub : null;
   if (!userId) return { supabase, user: null, hotelId: null };
 
   const { data: membership } = await supabase
