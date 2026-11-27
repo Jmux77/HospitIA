@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createAnonymousClient } from "@/lib/supabase/anonymous";
 import { GuestChat } from "@/components/guest-chat";
 
 export default async function GuestPage({params}:{params:Promise<{hotelId:string}>}) {
   const {hotelId}=await params;
-  const supabase=await createClient();
+  const supabase=createAnonymousClient();
   const {data:hotel,error}=await supabase.from("hotels")
     .select("id,name,city,language").eq("id",hotelId).eq("is_active",true).single();
   if(error||!hotel) notFound();
