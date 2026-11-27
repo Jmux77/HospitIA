@@ -16,32 +16,52 @@ export function FactManager({ initialFacts, hotelId, canManage }: { initialFacts
 
   async function add(event: React.FormEvent) {
     event.preventDefault();
-    if (!canManage) return;
+    if (!canManage || busy) return;
     setBusy(true); setNotice("");
-    const { data, error } = await createClient().from("hotel_facts")
-      .insert({ hotel_id: hotelId, category: category.trim(), question: question.trim(), answer: answer.trim(), is_public: isPublic })
-      .select("id,category,question,answer,is_public,created_at").single();
-    setBusy(false);
-    if (error || !data) { setNotice("Enregistrement impossible. Vérifiez vos droits et réessayez."); return; }
-    setFacts(old => [data, ...old]);
-    setQuestion(""); setAnswer(""); setIsPublic(false); setNotice("Information enregistrée.");
+    try {
+      const { data, error } = await createClient().from("hotel_facts")
+        .insert({ hotel_id: hotelId, category: category.trim(), question: question.trim(), answer: answer.trim(), is_public: isPublic })
+        .select("id,category,question,answer,is_public,created_at").single();
+      if (error || !data) throw new Error("save_failed");
+      setFacts(old => [data, ...old]);
+      setQuestion(""); setAnswer(""); setIsPublic(false); setNotice("Information enregistrée.");
+    } catch {
+      setNotice("Enregistrement impossible. Vérifiez votre connexion et vos droits, puis réessayez.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function togglePublication(fact: Fact) {
-    if (!canManage) return;
-    setNotice("");
-    const { data, error } = await createClient().from("hotel_facts")
-      .update({ is_public: !fact.is_public }).eq("id", fact.id)
-      .select("id,category,question,answer,is_public,created_at").single();
-    if (error || !data) { setNotice("Modification impossible. Vérifiez vos droits."); return; }
-    setFacts(old => old.map(item => item.id === fact.id ? data : item));
+    if (!canManage || busy) return;
+    setBusy(true); setNotice("");
+    try {
+      const { data, error } = await createClient().from("hotel_facts")
+        .update({ is_public: !fact.is_public }).eq("id", fact.id)
+        .select("id,category,question,answer,is_public,created_at").single();
+      if (error || !data) throw new Error("update_failed");
+      setFacts(old => old.map(item => item.id === fact.id ? data : item));
+    } catch {
+      setNotice("Modification impossible. Actualisez la page et vérifiez vos droits.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function remove(fact: Fact) {
-    if (!canManage || !window.confirm("Supprimer définitivement cette information ?")) return;
-    const { error } = await createClient().from("hotel_facts").delete().eq("id", fact.id);
-    if (error) { setNotice("Suppression impossible. Vérifiez vos droits."); return; }
-    setFacts(old => old.filter(item => item.id !== fact.id)); setNotice("Information supprimée.");
+    if (!canManage || busy || !window.confirm("Supprimer définitivement cette information ?")) return;
+    setBusy(true); setNotice("");
+    try {
+      const { data, error } = await createClient().from("hotel_facts")
+        .delete().eq("id", fact.id).select("id").single();
+      if (error || !data) throw new Error("delete_failed");
+      setFacts(old => old.filter(item => item.id !== fact.id));
+      setNotice("Information supprimée.");
+    } catch {
+      setNotice("Suppression impossible. Actualisez la page et réessayez.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return <div className="space-y-5">
@@ -73,7 +93,7 @@ export function FactManager({ initialFacts, hotelId, canManage }: { initialFacts
         {facts.map(fact=><article key={fact.id} className="rounded-xl border border-slate-200 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2"><span className="text-[10px] font-bold uppercase tracking-[0.15em] text-teal">{fact.category}</span><span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${fact.is_public ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{fact.is_public ? "Publiée au concierge" : "Privée"}</span></div>
           <p className="mt-2 text-sm font-semibold text-ink">{fact.question}</p><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-600">{fact.answer}</p>
-          {canManage && <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={()=>togglePublication(fact)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-teal">{fact.is_public ? "Dépublier" : "Publier"}</button><button type="button" onClick={()=>remove(fact)} className="rounded-lg px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50">Supprimer</button></div>}
+          {canManage && <div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={busy} onClick={()=>togglePublication(fact)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-teal disabled:opacity-50">{fact.is_public ? "Dépublier" : "Publier"}</button><button type="button" disabled={busy} onClick={()=>remove(fact)} className="rounded-lg px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">Supprimer</button></div>}
         </article>)}
         {!facts.length && <div className="py-12 text-center"><div className="text-3xl text-slate-300">▤</div><p className="mt-2 font-semibold text-ink">Votre base est encore vide</p><p className="mt-1 text-xs text-slate-500">Ajoutez vos horaires, services, accès et réponses aux questions fréquentes.</p></div>}
       </div>
