@@ -67,7 +67,7 @@ Cette V1 est un prototype technique, pas un SaaS autorisé à traiter de vrais c
 - Pas encore de traitement des demandes client ni de notifications réception.
 - Pas de paiement ou gestion d'abonnements Stripe.
 - Pas de tests automatisés d'isolation entre hôtels.
-- Les informations de la table `hotel_facts` des hôtels actifs sont lisibles par les visiteurs du concierge : ne jamais y mettre de données internes ou personnelles.
+- Seules les lignes `hotel_facts` explicitement marquées `is_public = true` sont lisibles par les visiteurs du concierge ; ne jamais y publier de données internes ou personnelles.
 - Pas encore de gestion de la conservation, du droit à l'effacement ou du consentement.
 
 Lire `docs/SECURITY-CHECKLIST.md` et `docs/DEPLOYMENT.md` avant tout pilote. Vérifier les obligations RGPD en France et LPD/révFADP en Suisse, les contrats de sous-traitance et le lieu de traitement des données.
