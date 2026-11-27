@@ -18,8 +18,8 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: "Votre message n'est pas valide." }, { status: 400 });
 
   const { hotelId, question } = parsed.data;
-  const supabase = createAnonymousClient();
   try {
+    const supabase = createAnonymousClient();
     const { data: hotel, error: hotelError } = await supabase.from("hotels")
       .select("id,name,language").eq("id", hotelId).eq("is_active", true).single();
     if (hotelError || !hotel) return NextResponse.json({ error: "Établissement introuvable." }, { status: 404 });
@@ -27,10 +27,14 @@ export async function POST(request: Request) {
     const { data: facts, error: factsError } = await supabase.from("hotel_facts")
       .select("category,question,answer").eq("hotel_id", hotelId).eq("is_public", true).limit(100);
     if (factsError) throw factsError;
-    if (!facts?.length) return NextResponse.json({
-      answer: "Je ne dispose pas encore des informations nécessaires pour répondre avec certitude. La réception pourra vous renseigner.",
-      persisted: false
-    });
+    if (!facts?.length) {
+      const fallbackAnswer = "Je ne dispose pas encore des informations nécessaires pour répondre avec certitude. La réception pourra vous renseigner.";
+      const { error: saveError } = await supabase.from("conversations").insert({
+        hotel_id: hotelId, channel: "web", guest_question: question, assistant_answer: fallbackAnswer
+      });
+      if (saveError) console.error("HospitIA fallback conversation persistence failed:", saveError.code || "database_error");
+      return NextResponse.json({ answer: fallbackAnswer, persisted: !saveError });
+    }
 
     const answer = await answerGuest(question, { name: hotel.name, language: hotel.language, facts });
     const { error: saveError } = await supabase.from("conversations").insert({
