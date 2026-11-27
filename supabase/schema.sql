@@ -60,7 +60,7 @@ revoke all on table public.hotel_facts from anon, authenticated;
 revoke all on table public.conversations from anon, authenticated;
 revoke all on table public.guest_requests from anon, authenticated;
 
-grant select (id, name, city, is_active) on public.hotels to anon;
+grant select (id, name, city, language, is_active) on public.hotels to anon;
 grant select (id, name, city, country, language, plan, slug, is_active, created_at) on public.hotels to authenticated;
 grant select (id, hotel_id, user_id, role, created_at) on public.hotel_members to authenticated;
 grant select (id, hotel_id, category, question, answer, is_public, created_at) on public.hotel_facts to anon, authenticated;
