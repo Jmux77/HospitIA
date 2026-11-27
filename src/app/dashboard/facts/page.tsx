@@ -3,25 +3,18 @@ import { getUserAndHotel } from "@/lib/auth";
 import { FactManager } from "@/components/fact-manager";
 
 export default async function FactsPage() {
-  const { user, hotelId, supabase } = await getUserAndHotel();
+  const { user, hotel, hotelId, supabase, role } = await getUserAndHotel();
   if (!user) redirect("/login");
-  if (!hotelId) redirect("/dashboard");
+  if (!hotel || !hotelId) redirect("/dashboard");
+  const { data: facts, error } = await supabase.from("hotel_facts")
+    .select("id,category,question,answer,is_public,created_at")
+    .eq("hotel_id", hotelId).order("created_at", { ascending: false });
 
-  const { data: facts } = await supabase
-    .from("hotel_facts")
-    .select("id,category,question,answer,is_public")
-    .eq("hotel_id", hotelId)
-    .order("created_at", { ascending: false });
-
-  return (
-    <main className="mx-auto max-w-4xl px-6 py-10">
-      <a href="/dashboard" className="text-sm text-teal">← Tableau de bord</a>
-      <h1 className="mt-5 text-3xl font-bold">Base de connaissances</h1>
-      <p className="mt-2 text-slate-600">
-        Les informations publiques peuvent être utilisées par le concierge client.
-        Les informations privées restent réservées à l'équipe de l'hôtel.
-      </p>
-      <FactManager initialFacts={facts || []} />
-    </main>
-  );
+  return <div className="space-y-2">
+    <p className="text-sm font-medium text-teal">Contenu & informations</p>
+    <h1 className="text-3xl font-bold text-ink">Base de connaissances</h1>
+    <p className="mb-6 text-sm text-slate-500">Les réponses publiées peuvent être utilisées par le concierge. Les informations privées restent réservées à l'équipe.</p>
+    {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">La base de connaissances n'a pas pu être chargée.</p>}
+    <FactManager initialFacts={facts || []} hotelId={hotelId} canManage={role === "owner" || role === "manager"}/>
+  </div>;
 }
