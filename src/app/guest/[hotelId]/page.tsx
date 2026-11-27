@@ -1,0 +1,4 @@
+import {notFound} from "next/navigation";
+import {createClient} from "@/lib/supabase/server";
+import {GuestChat} from "@/components/guest-chat";
+export default async function GuestPage({params}:{params:Promise<{hotelId:string}>}){const {hotelId}=await params;const supabase=await createClient();const {data:hotel}=await supabase.from("hotels").select("id,name,city").eq("id",hotelId).eq("is_active",true).single();if(!hotel)notFound();return <main className="mx-auto flex min-h-screen max-w-xl flex-col px-4 py-8"><div className="rounded-3xl border bg-white p-5 shadow-sm"><p className="text-xs font-bold uppercase tracking-widest text-teal">HospitIA Concierge</p><h1 className="mt-2 text-2xl font-bold">{hotel.name}</h1><p className="text-sm text-slate-500">{hotel.city}</p><GuestChat hotelId={hotel.id}/><p className="mt-5 text-center text-xs text-slate-400">Assistant virtuel · En cas d'urgence, contactez la réception.</p></div></main>;}
