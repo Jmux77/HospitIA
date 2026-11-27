@@ -8,10 +8,9 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function Login() {
   const router=useRouter();
-  const search=useSearchParams();
   const [email,setEmail]=useState("");
   const [password,setPassword]=useState("");
-  const [message,setMessage]=useState(search.get("error")==="callback"?"Le lien de confirmation est invalide ou a expiré. Réessayez.":"");
+  const [message,setMessage]=useState("");
   const [busy,setBusy]=useState(false);
   const [resetBusy,setResetBusy]=useState(false);
 
@@ -26,7 +25,7 @@ export default function Login() {
   async function resetPassword() {
     if(!email.trim()){setMessage("Saisissez votre adresse e-mail pour recevoir un lien de réinitialisation.");return;}
     setResetBusy(true);setMessage("");
-    const {error}=await createClient().auth.resetPasswordForEmail(email.trim(),{redirectTo:`${window.location.origin}/auth/callback?next=/login`});
+    const {error}=await createClient().auth.resetPasswordForEmail(email.trim(),{redirectTo:`${window.location.origin}/auth/callback?next=/reset-password`});
     setResetBusy(false);
     setMessage(error?"Impossible d'envoyer le lien de réinitialisation. Réessayez.":"Si ce compte existe, un e-mail de réinitialisation vient d'être envoyé.");
   }
