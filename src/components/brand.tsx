@@ -1,1 +1,11 @@
-export function Brand(){return <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-teal text-lg font-bold text-white">H</div><div><div className="text-lg font-bold">HospitIA</div><div className="text-xs text-slate-500">AI Hospitality Platform</div></div></div>;}
+import Link from "next/link";
+
+export function Brand({compact=false}:{compact?:boolean}) {
+  return <Link href="/" className="inline-flex items-center gap-3" aria-label="HospitIA — accueil">
+    <span className="grid h-10 w-10 place-items-center rounded-xl bg-ink text-xl font-black text-[#7BDFC5] shadow-sm">H</span>
+    <span className="block">
+      <span className="block text-lg font-bold leading-tight tracking-tight text-ink">HospitIA</span>
+      {!compact&&<span className="block text-[10px] font-medium tracking-[0.12em] text-slate-500">HOSPITALITY INTELLIGENCE</span>}
+    </span>
+  </Link>;
+}

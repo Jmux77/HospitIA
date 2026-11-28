@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, feature/hospitia-v1-foundation]
+    branches: [main, feature/hospitia-v1-foundation, feature/connected-hospitia-app]
 permissions:
   contents: read
 jobs:
